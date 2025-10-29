@@ -23,11 +23,7 @@
         }
 
         body {
-            background: linear-gradient(
-                180deg, 
-                var(--cosmic-primary) 0%, 
-                var(--cosmic-secondary) calc(100% - var(--scroll-progress) * 100%)
-            );
+            background: linear-gradient(180deg, #000428 0%, #004e92 100%);
             min-height: 100vh;
             font-family: 'Georgia', serif;
             color: #ffffff;
@@ -40,7 +36,7 @@
             position: fixed;
             inset: 0;
             background: radial-gradient(
-                ellipse at var(--mouse-x) var(--mouse-y), 
+                ellipse at center, 
                 #1b2735 0%, 
                 #090a0f 100%
             );
@@ -117,7 +113,7 @@
             position: absolute;
             inset: 0;
             background: radial-gradient(
-                circle at var(--mouse-x) var(--mouse-y),
+                circle at center,
                 rgba(183, 148, 246, 0.2),
                 transparent 70%
             );
@@ -139,7 +135,7 @@
         #starCanvas {
             position: fixed;
             inset: 0;
-            z-index: -1;
+            z-index: 1;
             opacity: 0;
             transition: opacity 3s ease;
         }
@@ -396,7 +392,7 @@
             position: absolute;
             inset: -100%;
             background: radial-gradient(
-                circle at var(--mouse-x) var(--mouse-y),
+                circle at center,
                 rgba(138, 43, 226, 0.05),
                 transparent 50%
             );
@@ -570,43 +566,37 @@
     <script>
         'use strict';
 
-        // Performance-optimized cosmic experience using functional programming patterns
+        // Performance-optimized cosmic experience
         const CosmicExperience = (() => {
-            // State management using immutable patterns
-            const state = new Map([
-                ['mouseX', 0.5],
-                ['mouseY', 0.5],
-                ['scrollProgress', 0],
-                ['isPlaying', false]
-            ]);
-
-            // Efficient particle pool to prevent GC thrashing
-            const particlePool = new Set();
-            const maxParticles = 300;
-            
-            // Star data using TypedArrays for maximum performance
-            const starCount = 200;
-            const starData = new Float32Array(starCount * 5); // x, y, size, speed, phase
-            
-            // Initialize stars with functional approach
-            const initStars = () => {
-                Array.from({ length: starCount }, (_, i) => {
-                    const idx = i * 5;
-                    starData[idx] = Math.random();     // x
-                    starData[idx + 1] = Math.random(); // y
-                    starData[idx + 2] = Math.random() * 2 + 0.5; // size
-                    starData[idx + 3] = Math.random() * 0.0005 + 0.0001; // speed
-                    starData[idx + 4] = Math.random() * Math.PI * 2; // phase
-                });
+            // State management
+            const state = {
+                mouseX: 0.5,
+                mouseY: 0.5,
+                scrollProgress: 0,
+                isPlaying: false
             };
 
-            // Canvas setup with optimal settings
+            // Star data
+            const starCount = 200;
+            const stars = [];
+            
+            // Initialize stars
+            const initStars = () => {
+                for (let i = 0; i < starCount; i++) {
+                    stars.push({
+                        x: Math.random(),
+                        y: Math.random(),
+                        size: Math.random() * 2 + 0.5,
+                        speed: Math.random() * 0.0005 + 0.0001,
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+            };
+
+            // Canvas setup
             const setupCanvas = () => {
                 const canvas = document.getElementById('starCanvas');
-                const ctx = canvas.getContext('2d', { 
-                    alpha: true,
-                    desynchronized: true 
-                });
+                const ctx = canvas.getContext('2d', { alpha: true });
                 
                 const resize = () => {
                     canvas.width = window.innerWidth;
@@ -619,151 +609,85 @@
                 return { canvas, ctx };
             };
 
-            // Optimized render loop using requestAnimationFrame
+            // Render loop
             const render = (ctx, canvas) => {
-                let animationId;
-                let lastTime = 0;
-                const targetFPS = 60;
-                const frameInterval = 1000 / targetFPS;
-                
                 const draw = (currentTime) => {
-                    animationId = requestAnimationFrame(draw);
-                    
-                    const deltaTime = currentTime - lastTime;
-                    if (deltaTime < frameInterval) return;
-                    
-                    lastTime = currentTime - (deltaTime % frameInterval);
+                    requestAnimationFrame(draw);
                     
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     
-                    // Create gradient based on scroll
-                    const scrollProg = state.get('scrollProgress');
+                    // Draw background gradient
                     const gradient = ctx.createRadialGradient(
-                        canvas.width * state.get('mouseX'),
-                        canvas.height * state.get('mouseY'),
+                        canvas.width * state.mouseX,
+                        canvas.height * state.mouseY,
                         0,
                         canvas.width / 2,
                         canvas.height / 2,
                         canvas.width
                     );
-                    gradient.addColorStop(0, `rgba(138, 43, 226, ${0.02 + scrollProg * 0.03})`);
+                    gradient.addColorStop(0, 'rgba(138, 43, 226, 0.03)');
                     gradient.addColorStop(1, 'transparent');
                     ctx.fillStyle = gradient;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     
-                    // Render stars efficiently
-                    ctx.fillStyle = 'white';
-                    for (let i = 0; i < starCount; i++) {
-                        const idx = i * 5;
-                        const x = starData[idx] * canvas.width;
-                        const y = starData[idx + 1] * canvas.height;
-                        const size = starData[idx + 2];
-                        const phase = starData[idx + 4];
+                    // Draw stars
+                    stars.forEach(star => {
+                        const x = star.x * canvas.width;
+                        const y = star.y * canvas.height;
                         
                         // Parallax effect
-                        const parallax = size > 1 ? 0.5 : 0.3;
-                        const offsetX = (state.get('mouseX') - 0.5) * parallax * 50;
-                        const offsetY = (state.get('mouseY') - 0.5) * parallax * 50;
+                        const parallax = star.size > 1 ? 0.5 : 0.3;
+                        const offsetX = (state.mouseX - 0.5) * parallax * 50;
+                        const offsetY = (state.mouseY - 0.5) * parallax * 50;
                         
                         // Twinkle effect
-                        const brightness = Math.sin(phase) * 0.5 + 0.5;
+                        const brightness = Math.sin(star.phase) * 0.5 + 0.5;
                         ctx.globalAlpha = brightness * 0.8 + 0.2;
                         
+                        ctx.fillStyle = 'white';
                         ctx.beginPath();
-                        ctx.arc(x + offsetX, y + offsetY, size, 0, Math.PI * 2);
+                        ctx.arc(x + offsetX, y + offsetY, star.size, 0, Math.PI * 2);
                         ctx.fill();
                         
                         // Update phase
-                        starData[idx + 4] += starData[idx + 3] * deltaTime;
-                    }
+                        star.phase += star.speed * 16;
+                    });
                     
                     ctx.globalAlpha = 1;
                 };
                 
-                animationId = requestAnimationFrame(draw);
-                
-                return () => cancelAnimationFrame(animationId);
+                requestAnimationFrame(draw);
             };
 
-            // Throttled mouse handler using functional composition
-            const throttle = (func, delay) => {
-                let lastCall = 0;
-                return (...args) => {
-                    const now = Date.now();
-                    if (now - lastCall >= delay) {
-                        lastCall = now;
-                        return func(...args);
-                    }
-                };
+            // Mouse handler
+            const handleMouseMove = (e) => {
+                state.mouseX = e.clientX / window.innerWidth;
+                state.mouseY = e.clientY / window.innerHeight;
             };
 
-            const handleMouseMove = throttle((e) => {
-                state.set('mouseX', e.clientX / window.innerWidth);
-                state.set('mouseY', e.clientY / window.innerHeight);
-                
-                // Update CSS variables for GPU-accelerated animations
-                document.documentElement.style.setProperty('--mouse-x', `${state.get('mouseX') * 100}%`);
-                document.documentElement.style.setProperty('--mouse-y', `${state.get('mouseY') * 100}%`);
-            }, 16); // ~60fps
-
-            // Optimized scroll handler with RAF debouncing
-            const handleScroll = (() => {
-                let ticking = false;
-                
-                return () => {
-                    if (!ticking) {
-                        requestAnimationFrame(() => {
-                            const scrolled = window.pageYOffset;
-                            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-                            const progress = Math.min(scrolled / maxScroll, 1);
-                            
-                            state.set('scrollProgress', progress);
-                            document.documentElement.style.setProperty('--scroll-progress', progress);
-                            
-                            // Update background gradient
-                            document.body.style.background = `linear-gradient(
-                                180deg,
-                                hsl(${223 + progress * 20}, ${100 - progress * 20}%, ${8 + progress * 5}%) 0%,
-                                hsl(${209 - progress * 10}, ${100 - progress * 30}%, ${29 + progress * 10}%) 100%
-                            )`;
-                            
-                            ticking = false;
-                        });
-                        ticking = true;
-                    }
-                };
-            })();
-
-            // Intersection Observer for efficient animation triggering
+            // Intersection Observer
             const setupIntersectionObserver = () => {
-                const observerOptions = {
-                    threshold: [0.1, 0.5],
-                    rootMargin: '0px'
-                };
-                
                 const observer = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
                         if (entry.isIntersecting) {
                             entry.target.classList.add('visible');
                         }
                     });
-                }, observerOptions);
+                }, { threshold: 0.1 });
                 
-                // Observe elements
-                ['#letter', '#thankYou'].forEach(selector => {
-                    const el = document.querySelector(selector);
-                    if (el) observer.observe(el);
-                });
+                const letter = document.querySelector('#letter');
+                const thankYou = document.querySelector('#thankYou');
+                if (letter) observer.observe(letter);
+                if (thankYou) observer.observe(thankYou);
             };
 
-            // Initialize the experience
+            // Initialize
             const init = () => {
                 initStars();
                 const { canvas, ctx } = setupCanvas();
                 
-                // Event listeners with passive option for better scroll performance
+                // Event listeners
                 document.addEventListener('mousemove', handleMouseMove, { passive: true });
-                window.addEventListener('scroll', handleScroll, { passive: true });
                 
                 // Entry interaction
                 const entryOverlay = document.getElementById('entryOverlay');
@@ -771,8 +695,9 @@
                 const starCanvas = document.getElementById('starCanvas');
                 const bgMusic = document.getElementById('bgMusic');
                 const audioBars = document.querySelectorAll('.audio-bar');
+                const enterButton = document.querySelector('.enter-button');
                 
-                entryOverlay.addEventListener('click', async () => {
+                enterButton.addEventListener('click', async () => {
                     // Start experience
                     entryOverlay.classList.add('hidden');
                     starCanvas.classList.add('visible');
@@ -780,7 +705,7 @@
                     // Play music
                     try {
                         await bgMusic.play();
-                        state.set('isPlaying', true);
+                        state.isPlaying = true;
                         audioBars.forEach(bar => bar.classList.add('playing'));
                     } catch (e) {
                         console.log('Audio autoplay prevented');
@@ -796,10 +721,10 @@
                     render(ctx, canvas);
                 });
                 
-                // Memory cards tilt effect (optimized)
+                // Memory cards tilt effect
                 const memories = document.querySelectorAll('.memory');
                 memories.forEach(memory => {
-                    memory.addEventListener('mousemove', throttle((e) => {
+                    memory.addEventListener('mousemove', (e) => {
                         const rect = memory.getBoundingClientRect();
                         const x = (e.clientX - rect.left) / rect.width - 0.5;
                         const y = (e.clientY - rect.top) / rect.height - 0.5;
@@ -809,7 +734,7 @@
                             rotateY(${x * 20}deg)
                             rotateX(${-y * 20}deg)
                         `;
-                    }, 16));
+                    });
                     
                     memory.addEventListener('mouseleave', () => {
                         memory.style.transform = 'translateZ(0) rotateY(0) rotateX(0)';
